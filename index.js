@@ -3,7 +3,7 @@ import fetch from "node-fetch";
 import https from "https";
 
 const app = express();
-const BACKEND = "https://ecsr.store";
+const BACKEND = "http://ecsr.store";
 
 // Force TLS 1.2 – many older servers require this
 const agent = new https.Agent({
@@ -34,3 +34,4 @@ app.all("*", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Proxy running on port " + PORT));
+

@@ -5,12 +5,12 @@ import https from "https";
 
 const app = express();
 
-// Try HTTP first – your server might redirect to HTTPS
-const BACKEND = "http://ecsr.store";
+// 👇 REAL backend – do NOT use your Railway URL here
+const BACKEND = "http://ecsr.store"; // or https://ecsr.store once TLS works
 
 const httpAgent = new http.Agent();
 const httpsAgent = new https.Agent({
-  secureProtocol: "TLSv1_2_method"
+  secureProtocol: "TLSv1_2_method",
 });
 
 app.use(express.raw({ type: "*/*" }));
@@ -26,14 +26,17 @@ app.all("*", async (req, res) => {
         req.method !== "GET" && req.method !== "HEAD"
           ? req.body
           : undefined,
-      // 👇 IMPORTANT: choose agent based on *actual* URL (handles redirects)
       agent: (parsedUrl) =>
-        parsedUrl.protocol === "http:" ? httpAgent : httpsAgent
+        parsedUrl.protocol === "http:" ? httpAgent : httpsAgent,
     });
 
+    // Copy headers
     response.headers.forEach((v, k) => res.setHeader(k, v));
     res.status(response.status);
-    res.send(Buffer.from(await response.arrayBuffer()));
+
+    // Stream the body through without re-compressing/decompressing
+    const buf = await response.arrayBuffer();
+    res.send(Buffer.from(buf));
   } catch (err) {
     console.error(err);
     res.status(500).send("Proxy Error: " + err.message);

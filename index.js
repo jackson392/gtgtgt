@@ -5,10 +5,9 @@ import https from "https";
 
 const app = express();
 
-// ⬇️ Try HTTP first (if your server supports it)
+// Try HTTP first – your server might redirect to HTTPS
 const BACKEND = "http://ecsr.store";
 
-// One agent for http, one for https
 const httpAgent = new http.Agent();
 const httpsAgent = new https.Agent({
   secureProtocol: "TLSv1_2_method"
@@ -19,10 +18,6 @@ app.use(express.raw({ type: "*/*" }));
 app.all("*", async (req, res) => {
   try {
     const target = BACKEND + req.originalUrl;
-    const url = new URL(target);
-
-    // Choose correct agent based on protocol
-    const agent = url.protocol === "http:" ? httpAgent : httpsAgent;
 
     const response = await fetch(target, {
       method: req.method,
@@ -31,7 +26,9 @@ app.all("*", async (req, res) => {
         req.method !== "GET" && req.method !== "HEAD"
           ? req.body
           : undefined,
-      agent
+      // 👇 IMPORTANT: choose agent based on *actual* URL (handles redirects)
+      agent: (parsedUrl) =>
+        parsedUrl.protocol === "http:" ? httpAgent : httpsAgent
     });
 
     response.headers.forEach((v, k) => res.setHeader(k, v));

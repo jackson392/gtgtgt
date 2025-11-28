@@ -1,8 +1,14 @@
 import express from "express";
 import fetch from "node-fetch";
+import https from "https";
 
 const app = express();
 const BACKEND = "https://ecsr.store";
+
+// Force TLS 1.2 – many older servers require this
+const agent = new https.Agent({
+  secureProtocol: "TLSv1_2_method"
+});
 
 app.use(express.raw({ type: "*/*" }));
 
@@ -13,7 +19,8 @@ app.all("*", async (req, res) => {
     const response = await fetch(target, {
       method: req.method,
       headers: req.headers,
-      body: req.method !== "GET" && req.method !== "HEAD" ? req.body : undefined
+      body: req.method !== "GET" && req.method !== "HEAD" ? req.body : undefined,
+      agent // 👈 important
     });
 
     response.headers.forEach((v, k) => res.setHeader(k, v));
